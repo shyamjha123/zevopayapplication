@@ -15,6 +15,8 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useNavigation } from '@react-navigation/native';
+
 import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Formik } from "formik";
@@ -36,6 +38,7 @@ const validationSchema = Yup.object().shape({
 
 const Zpayout = () => {
   const router = useRouter();
+  const navigation = useNavigation();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [mpinModal, setmpinModal] = useState(false);
@@ -50,8 +53,6 @@ const Zpayout = () => {
 
 
   // user Api 
-
-
 
   const fetchUserApi = async () => {
     const storedToken = await AsyncStorage.getItem("token");
@@ -81,9 +82,7 @@ const Zpayout = () => {
     fetchUserApi();
   }, [])
 
-
   console.log(userapi, "userApidataresponse");
-
 
   useEffect(() => {
     setModalVisible(true); // Page load hone pe modal open hoga
@@ -287,6 +286,8 @@ const Zpayout = () => {
   }
 
   console.log(Modeselection, "mode")
+
+  console.log(userapi?.status, "aagyere")
   return (
     <SafeAreaView style={styles.container}>
       {/* MPIN Verification Modal */}
@@ -369,7 +370,43 @@ const Zpayout = () => {
               remark: ""
             }}
             validationSchema={validationSchema}
-            onSubmit={(values, { resetForm }) => openMpinModal(values, resetForm)}
+            onSubmit={async (values, { resetForm }) => {
+              // if (userapi?.status === "IN_ACTIVE") {
+              //   await AsyncStorage.removeItem("token");
+              //   navigation.reset({
+              //     index: 0,
+              //     routes: [{ name: "Login" }],
+              //   });
+              //   return;
+              // }
+
+              try {
+                const token = await AsyncStorage.getItem("token");
+
+                const res = await fetch("https://zevopay.online/api/v1/user", {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+
+                const data = await res.json();
+
+                console.log(data?.status, "kamalbabu")
+
+                if (data?.status === "IN_ACTIVE") {
+                  await AsyncStorage.removeItem("token");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "Login" }],
+                  });
+                  return;
+                }
+
+                openMpinModal(values, resetForm);
+              } catch (error) {
+                console.error("Error in onSubmit:", error);
+              }
+            }}
           >
             {({
               handleChange,
