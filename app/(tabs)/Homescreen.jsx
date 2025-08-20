@@ -109,13 +109,6 @@ const Homescreen = () => {
     );
   }
 
-  // const renderItem = (item) => (
-  //   <View style={styles.card}>
-  //     <Image source={{ uri: item.img }} style={styles.image} />
-  //   </View>
-  // );
-
-
   return (
     <ScrollView
       contentContainerStyle={styles.scrollViewContainer}
@@ -130,7 +123,7 @@ const Homescreen = () => {
               <Ionicons name="wallet" size={30} color="blue" />
               <View style={{ flexDirection: "column" }}>
                 <Text style={{ color: "blue" }}>Main Wallet</Text>
-                <Text style={{ color: "black" }}>₹ {walletData.balance}</Text>
+                <Text style={{ color: "black" }}>₹ {Number(walletData.balance).toFixed(2)}</Text>
               </View>
             </View>
           </Link>

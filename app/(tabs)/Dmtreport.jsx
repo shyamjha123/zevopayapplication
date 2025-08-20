@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Pressable,
   FlatList,
+  ActivityIndicator,
   Alert,
   Modal
 } from "react-native";
@@ -23,10 +24,12 @@ const Dmtreport = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [userPhone, setUserPhone] = useState("");
-
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   useEffect(() => {
     const fetchPhone = async () => {
@@ -43,8 +46,6 @@ const Dmtreport = () => {
     fetchPhone();
   }, []);
 
-
-
   const showDatePicker = (pickerType) => {
     setCurrentPicker(pickerType);
     setDatePickerVisibility(true);
@@ -55,7 +56,7 @@ const Dmtreport = () => {
   };
 
   const handleConfirm = (date) => {
-    const formattedDate = format(date, "MM-dd-yyyy");
+    const formattedDate = format(date, "yyyy-MM-dd");
     if (currentPicker === "from") {
       setStartDate(formattedDate);
     } else if (currentPicker === "to") {
@@ -64,59 +65,103 @@ const Dmtreport = () => {
     hideDatePicker();
   };
 
-  const fetchTransactions = async (useDateRange = false) => {
-    let url = "https://zevopay.online/api/v1/wallet/transactions";
-
-    if (useDateRange) {
-      if (!startDate || !endDate) {
-        Alert.alert("Error", "Please select both start and end dates.");
-        return;
-      }
-      url += `?start_date=${startDate}&end_date=${endDate}`;
-    }
+  const fetchTransactions = async (useDateRange = false, page = 1) => {
+    if (page === 1) setLoading(true);
+    else setIsFetchingMore(true);
 
     try {
-      setLoading(true);
       const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        Alert.alert("Error", "User not authenticated. Token is missing.");
-        return;
+      let url = `https://zevopay.online/api/v1/user/virtualreport?page=${page}`;
+
+      if (startDate && endDate) {
+        const formattedStart = format(startDate, "yyyy-MM-dd");
+        console.log(formattedStart, "start");
+
+        const formattedEnd = format(endDate, "yyyy-MM-dd");
+        console.log(formattedEnd, "start");
+        url += `&startDate=${formattedStart}&endDate=${formattedEnd}`;
+        console.log(url, 'urlbase');
       }
 
       const response = await fetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        // Filter out transactions with mode "UPI"
-        const filteredTransactions = data.data.filter(
-          (transaction) =>
-            transaction.mode !== "UPI" &&
-            ["CASH CREDIT", "CASH DEBIT", "NEFT", "RTGS", "IMPS"].includes(transaction.mode)
-        );
-        setTransactions(filteredTransactions);
+      const jsonResponse = await response.json();
+      console.log(jsonResponse, "payoutreportresponse");
+
+      if (jsonResponse && Array.isArray(jsonResponse.data)) {
+        if (page === 1) {
+          setTransactions(jsonResponse.data);
+        } else {
+          setTransactions(prev => [...prev, ...jsonResponse.data]);
+        }
+
+        setCurrentPage(jsonResponse.meta.currentPage);
+        setLastPage(jsonResponse.meta.lastPage);
       } else {
-        Alert.alert("Error", data.message || "Failed to fetch transactions.");
+        if (page === 1) setTransactions([]);
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "An error occurred while fetching transactions.");
+      console.error("Error fetching transactions:", error);
     } finally {
       setLoading(false);
+      setIsFetchingMore(false);
     }
   };
-
-  console.log(transactions, "transactions")
-
 
   useEffect(() => {
     // Fetch data by default when the component loads
     fetchTransactions(false);
   }, []);
+
+  const fetchAllTransactions = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      let page = 1;
+      let allTransactions = [];
+      let lastPage = 1;
+
+      do {
+        let url = `https://zevopay.online/api/v1/user/virtualreport?page=${page}`;
+
+        if (startDate && endDate) {
+          const formattedStart = format(startDate, "yyyy-MM-dd");
+          const formattedEnd = format(endDate, "yyyy-MM-dd");
+          url += `&startDate=${formattedStart}&endDate=${formattedEnd}`;
+        }
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const jsonResponse = await response.json();
+
+        if (jsonResponse && Array.isArray(jsonResponse.data)) {
+          allTransactions = [...allTransactions, ...jsonResponse.data];
+          lastPage = jsonResponse.meta.lastPage;
+          page++;
+        } else {
+          break;
+        }
+
+      } while (page <= lastPage);
+
+      return allTransactions;
+
+    } catch (error) {
+      console.error("Error fetching all transactions:", error);
+      return [];
+    }
+  };
 
   const renderTransactionCard = ({ item }) => (
     <View style={{ justifyContent: "center", alignItems: "center" }}>
@@ -139,7 +184,7 @@ const Dmtreport = () => {
             <Text style={styles.cardText}>{item.van}</Text>
           </View>
 
-          <Text style={styles.cardText}>₹ {item.tranAmt}</Text>
+          <Text style={styles.cardText}>₹ {Number(item.tranAmt).toFixed(2)}</Text>
           <Text style={styles.cardText}>Txn Id: {item.utr}</Text>
           <Text style={styles.carddate}>
             {new Date(item.updated_at).toLocaleString("en-US", {
@@ -156,9 +201,16 @@ const Dmtreport = () => {
     </View>
   );
 
+  const handleLoadMore = () => {
+    if (!isFetchingMore && currentPage < lastPage) {
+      fetchTransactions(true, currentPage + 1);
+    }
+  };
+
 
   const handleExport = async () => {
-    if (transactions.length === 0) {
+    const allTransactions = await fetchAllTransactions();
+    if (allTransactions.length === 0) {
       alert("No data to export");
       return;
     }
@@ -185,12 +237,13 @@ const Dmtreport = () => {
 
     // 🔹 Prepare transaction data
     const exportData = [
-      ["Name", "phoneNumber", "Virtual ACC No.", "Amount", "Txn Id", "Date"], // Headers
-      ...transactions.map((item) => [
+      ["Sno", "Name", "phoneNumber", "Virtual ACC No.", "Amount", "Txn Id", "Date"], // Headers
+      ...allTransactions.map((item, index) => [
+        index + 1,
         item.user.name || "-",
         userPhone || "-",
         item.van || "-",
-        item.tranAmt || "-",
+        Number(item.tranAmt).toFixed(2) || "-",
         item.utr || "-",
         new Intl.DateTimeFormat("en-GB", {
           day: "2-digit",
@@ -210,12 +263,12 @@ const Dmtreport = () => {
     // 🔹 Create worksheet
     const ws = XLSX.utils.aoa_to_sheet(combinedData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Payout Report");
+    XLSX.utils.book_append_sheet(wb, ws, "Virtual Report");
 
     // 🔹 Write file
     const wbout = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
 
-    const fileUri = FileSystem.documentDirectory + "Payout_Report.xlsx";
+    const fileUri = FileSystem.documentDirectory + "Virtual_Report.xlsx";
 
     await FileSystem.writeAsStringAsync(fileUri, wbout, {
       encoding: FileSystem.EncodingType.Base64,
@@ -223,13 +276,14 @@ const Dmtreport = () => {
 
     await Sharing.shareAsync(fileUri, {
       mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      dialogTitle: "Export Payout Report",
+      dialogTitle: "Export Virtual Acc Report",
       UTI: "com.microsoft.excel.xlsx",
     });
   };
 
   const handlePDFExport = async () => {
-    if (transactions.length === 0) {
+    const allTransactions = await fetchAllTransactions();
+    if (allTransactions.length === 0) {
       alert("No data to export");
       return;
     }
@@ -247,14 +301,15 @@ const Dmtreport = () => {
       .map(([key, value]) => `<tr><td>${key}</td><td>${value}</td></tr>`)
       .join("");
 
-    const transactionRows = transactions
-      .map((item) => {
+    const transactionRows = allTransactions
+      .map((item, index) => {
         return `
                       <tr>
+                          <td>${index + 1}</td>
                           <td>${item.user.name || "-"}</td>
                           <td>${userPhone || "-"}</td>
                           <td>${item.van || "-"}</td>
-                          <td>${item.tranAmt || "-"}</td>
+                          <td>${Number(item.tranAmt).toFixed(2) || "-"}</td>
                           <td>${item.utr || "-"}</td>
                           <td>${new Intl.DateTimeFormat("en-GB", {
           day: "2-digit",
@@ -303,6 +358,7 @@ const Dmtreport = () => {
                       <h2>Transaction Details</h2>
                       <table>
                           <tr>
+                               <th>Sno</th>
                               <th>Name</th>
                               <th>Phone number</th>
                               <th>Virtual Acc No.</th>
@@ -375,9 +431,13 @@ const Dmtreport = () => {
 
         <FlatList
           data={transactions}
-          keyExtractor={(item) => item.id.toString()}
           renderItem={renderTransactionCard}
-          contentContainerStyle={styles.listContainer}
+          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingMore ? <ActivityIndicator size="small" color="#007BB5" /> : null
+          }
         />
       </View>
 
@@ -535,3 +595,4 @@ const styles = StyleSheet.create({
 });
 
 export default Dmtreport;
+

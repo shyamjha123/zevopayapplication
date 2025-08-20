@@ -1,12 +1,15 @@
 import { View, Text, StyleSheet, SafeAreaView } from "react-native";
 import React from "react";
 import Mainwallet from "../(tabs)/Mainwallet";
+import Payoutreport from './Payoutreport';
+import Dmtreport from './Dmtreport';
+import Upitransactionreport from './Upitransactionreport';
 import Login from "../(tabs)/Login";
 
 const index = () => {
   return (
     <SafeAreaView style={styles.container}>
-      <Login />
+     <Login/>
     </SafeAreaView>
   );
 };

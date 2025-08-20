@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 const Fundmanagement = () => {
-  const [profileData, setProfileData] = useState(null);
+  const [bankdata, setBankdata] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfileData = async () => {
+    const fetchBankdata = async () => {
       try {
         const token = await AsyncStorage.getItem("token"); // Retrieve the stored token
         if (!token) {
@@ -26,11 +26,10 @@ const Fundmanagement = () => {
         console.log(data, "dataresponsedddakkuu");
 
         if (response.ok) {
-          setProfileData(data); // Set the fetched data in state
+          setBankdata(data); // Set the fetched data in state
 
-          console.log(profileData.name, "nameofusersakuu");
         } else {
-          Alert.alert("Error", data.message || "Failed to fetch user profile.");
+          Alert.alert("Error", data.message || "Failed to fetch user Bank detail.");
         }
       } catch (error) {
       } finally {
@@ -38,7 +37,7 @@ const Fundmanagement = () => {
       }
     };
 
-    fetchProfileData();
+    fetchBankdata();
   }, []);
 
   if (loading) {
@@ -49,58 +48,79 @@ const Fundmanagement = () => {
     );
   }
 
-  if (!profileData) {
+  if (!bankdata) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Failed to load profile data.</Text>
+        <Text style={styles.errorText}>Failed to load Bank Details data.</Text>
       </View>
     );
   }
 
+  console.log(bankdata, "bankdatadetails")
+
   return (
     <View style={styles.container}>
-      <View
-        style={{
-          backgroundColor: "lightgray",
-          width: "100%",
-          height: "8%",
-          //   marginTop: 30,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text style={{ color: "black", fontWeight: "bold" }}>Bank Details</Text>
-      </View>
-      <View style={styles.footerfirstcard}>
-        <Text style={{ fontWeight: "400", fontSize: 15 }}>
-          {`vas.${profileData.virtual_account}@idbi`}
-        </Text>
-      </View>
-      <View style={styles.footersecondcard}>
-        <Text style={{ fontWeight: "bold", fontSize: 16, marginTop: 10 }}>
-          YOUR Account Details
-        </Text>
-        <View style={styles.Commontextcontainer}>
-          <Text>Bank Name</Text>
-          <Text>IDBI Bank Ltd.</Text>
+      {/* Full UI when bankName is "IDBI/HDFC" or "HDFC/IDBI" */}
+      {(bankdata?.bankName === "IDBI/HDFC" || bankdata?.bankName === "HDFC/IDBI"  || bankdata?.bankName === null ) && (
+        <>
+          <View style={styles.Childrencontainer}>
+            <Text style={{ color: "black", fontWeight: "bold" }}>Bank Details</Text>
+          </View>
+
+          <View style={styles.footerfirstcard}>
+            <Text style={{ fontWeight: "400", fontSize: 15 }}>
+              {bankdata?.bankName === "HDFC"
+                ? `${bankdata?.vpa}`
+                : `vas.${bankdata?.virtual_account}@idbi`}
+            </Text>
+          </View>
+
+          {/* 👇 Show Account Details ONLY if bankName is not exactly "HDFC" */}
+          {bankdata?.bankName !== "HDFC" && (
+            <View style={styles.footersecondcard}>
+              <Text style={{ fontWeight: "bold", fontSize: 16, marginTop: 10 }}>
+                YOUR Account Details
+              </Text>
+
+              <View style={styles.Commontextcontainer}>
+                <Text>Bank Name</Text>
+                <Text>IDBI Bank Ltd.</Text>
+              </View>
+
+              <View style={styles.Commontextcontainer}>
+                <Text>Account Name</Text>
+                <Text>{bankdata?.name}</Text>
+              </View>
+
+              <View style={styles.Commontextcontainer}>
+                <Text>ACCOUNT NUMBER</Text>
+                <Text>{bankdata?.virtual_account}</Text>
+              </View>
+
+              <View style={styles.Commontextcontainer}>
+                <Text>IFSC</Text>
+                <Text>IBKL0002031</Text>
+              </View>
+
+              <View style={styles.Commontextcontainer}>
+                <Text>Account Type</Text>
+                <Text>Current Account</Text>
+              </View>
+            </View>
+          )}
+        </>
+      )}
+
+      {/* Show VPA block only when:
+      - bankName !== "IDBI"
+      - bankName !== null */}
+      {bankdata?.bankName !== "IDBI" && bankdata?.bankName !== null && (
+        <View style={styles.footerfirstcardhdfc}>
+          <Text style={{ fontWeight: "400", fontSize: 15 }}>
+            {bankdata?.vpa}
+          </Text>
         </View>
-        <View style={styles.Commontextcontainer}>
-          <Text>Account Name</Text>
-          <Text>{profileData.name}</Text>
-        </View>
-        <View style={styles.Commontextcontainer}>
-          <Text>ACCOUNT NUMBER</Text>
-          <Text>{profileData.virtual_account}</Text>
-        </View>
-        <View style={styles.Commontextcontainer}>
-          <Text>IFSC</Text>
-          <Text>IBKL0002031</Text>
-        </View>
-        <View style={styles.Commontextcontainer}>
-          <Text>Account Type</Text>
-          <Text>Current Account</Text>
-        </View>
-      </View>
+      )}
     </View>
   );
 };
@@ -111,12 +131,37 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
   },
+  textstyle:{
+  color: "black",
+  fontWeight: "bold"
+  },
+  
+  Childrencontainer: {
+    backgroundColor: "lightgray",
+    width: "100%",
+    height: "8%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   footerfirstcard: {
     borderRadius: 3,
     alignItems: "center",
     justifyContent: "center",
     width: "92%",
     height: "8%",
+    backgroundColor: "#fff",
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
+    shadowOpacity: 0.25,
+  },
+
+  footerfirstcardhdfc: {
+    borderRadius: 3,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "92%",
+    height: "12%",
+    marginTop: 50,
     backgroundColor: "#fff",
     shadowOffset: { width: 0, height: 2 },
     elevation: 5,

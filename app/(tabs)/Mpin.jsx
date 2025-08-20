@@ -50,35 +50,42 @@ const Mpin = () => {
       Alert.alert("Error", "Please enter your MPIN.");
       return;
     }
-  
+
     setState((prevState) => ({ ...prevState, loading: true }));
-  
+
     try {
-      const fetchMpinVerification = fetch(
-        `https://zevopay.online/api/v1/user/verify-mpin`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${state.token}`,
-          },
-          body: JSON.stringify({ mpin: state.mpin.trim() }),
-        }
-      );
-  
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Mpin Verification Failed")), 2000)
-      );
-  
-      // Race between API call and timeout
-      const response = await Promise.race([fetchMpinVerification, timeout]);
-  
+      const response = await fetch(`https://zevopay.online/api/v1/user/verify-mpin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.token}`,
+        },
+        body: JSON.stringify({ mpin: state.mpin.trim() }),
+      });
+
       const data = await response.json();
       console.log(data, "dataaagya");
-  
+
       if (response.ok) {
-        const { name, email, phone, virtual_account, status, address, aadharNumber, panNumber, state, shopName, shopAddress, gstNumber, businessPanNo, landlineNumber, landlineSTDCode, country } = data;
-  
+        const {
+          name,
+          email,
+          phone,
+          virtual_account,
+          status,
+          address,
+          aadharNumber,
+          panNumber,
+          state,
+          shopName,
+          shopAddress,
+          gstNumber,
+          businessPanNo,
+          landlineNumber,
+          landlineSTDCode,
+          country,
+        } = data;
+
         await AsyncStorage.setItem("userName", name);
         await AsyncStorage.setItem("userEmail", email);
         await AsyncStorage.setItem("userPhone", phone);
@@ -96,7 +103,6 @@ const Mpin = () => {
         await AsyncStorage.setItem("landlineSTDCode", landlineSTDCode);
         await AsyncStorage.setItem("country", country);
 
-  
         Alert.alert("Success", "MPIN verified successfully!");
         router.push("/Dashboard");
       } else {
@@ -111,7 +117,7 @@ const Mpin = () => {
       setState((prevState) => ({ ...prevState, loading: false }));
     }
   };
-  
+
   return (
     <View style={styles.container}>
       <View style={styles.mpinContainer}>

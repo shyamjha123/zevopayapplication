@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
@@ -22,8 +22,12 @@ const Upitransactionreport = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
+
 
   const showDatePicker = (pickerType) => {
     setCurrentPicker(pickerType);
@@ -35,7 +39,11 @@ const Upitransactionreport = () => {
   };
 
   const handleConfirm = (date) => {
-    const formattedDate = format(date, "MM-dd-yyyy");
+    // console.log(date, 'date');
+    console.log("Raw date:", date);
+    console.log("Formatted:", format(date, "yyyy-MM-dd"));
+
+    const formattedDate = format(date, "yyyy-MM-dd");
     if (currentPicker === "from") {
       setStartDate(formattedDate);
     } else if (currentPicker === "to") {
@@ -45,55 +53,112 @@ const Upitransactionreport = () => {
   };
 
 
+ const fetchTransactions = async (useDateRange = false, page = 1) => {
+        if (page === 1) setLoading(true);
+        else setIsFetchingMore(true);
 
-  const fetchTransactions = async (useDateRange = false) => {
-    let url = "https://zevopay.online/api/v1/wallet/transactions";
+        try {
+            const token = await AsyncStorage.getItem("token");
+            let url = `https://zevopay.online/api/v1/user/upireport?page=${page}`;
 
-    if (useDateRange) {
-      if (!startDate || !endDate) {
-        Alert.alert("Error", "Please select both start and end dates.");
-        return;
-      }
-      url += `?start_date=${startDate}&end_date=${endDate}`;
-    }
+            if (startDate && endDate) {
+                const formattedStart = format(startDate, "yyyy-MM-dd");
+                console.log(formattedStart, "start");
 
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        Alert.alert("Error", "User not authenticated. Token is missing.");
-        return;
-      }
+                const formattedEnd = format(endDate, "yyyy-MM-dd");
+                console.log(formattedEnd, "start");
+                url += `&startDate=${formattedStart}&endDate=${formattedEnd}`;
+                console.log(url, 'urlbase');
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+            }
 
-      const data = await response.json();
-      if (response.ok) {
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
 
-        const filteredTransactions = data.data.filter(
-          (transaction) => transaction.mode === "UPI"
-        );
-        setTransactions(filteredTransactions);
-      } else {
-        Alert.alert("Error", data.message || "Failed to fetch transactions.");
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "An error occurred while fetching transactions.");
-    } finally {
-      setLoading(false);
-    }
-  };
+            const jsonResponse = await response.json();
+            console.log(jsonResponse, "payoutreportresponse");
+
+            if (jsonResponse && Array.isArray(jsonResponse.data)) {
+                if (page === 1) {
+                    setTransactions(jsonResponse.data);
+                } else {
+                    setTransactions(prev => [...prev, ...jsonResponse.data]);
+                }
+
+                setCurrentPage(jsonResponse.meta.currentPage);
+                setLastPage(jsonResponse.meta.lastPage);
+            } else {
+                if (page === 1) setTransactions([]);
+            }
+        } catch (error) {
+            console.error("Error fetching transactions:", error);
+        } finally {
+            setLoading(false);
+            setIsFetchingMore(false);
+        }
+    };
+
 
   useEffect(() => {
     // Fetch data by default when the component loads
-    fetchTransactions(false);
+    fetchTransactions(false, 1);
   }, []);
+
+
+  const fetchAllTransactions = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      let page = 1;
+      let allTransactions = [];
+      let lastPage = 1;
+
+      do {
+        let url = `https://zevopay.online/api/v1/user/upireport?page=${page}`;
+
+        if (startDate && endDate) {
+          const formattedStart = format(startDate, "yyyy-MM-dd");
+          const formattedEnd = format(endDate, "yyyy-MM-dd");
+          url += `&startDate=${formattedStart}&endDate=${formattedEnd}`;
+        }
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const jsonResponse = await response.json();
+
+        if (jsonResponse && Array.isArray(jsonResponse.data)) {
+          allTransactions = [...allTransactions, ...jsonResponse.data];
+          lastPage = jsonResponse.meta.lastPage;
+          page++;
+        } else {
+          break;
+        }
+
+      } while (page <= lastPage);
+
+      return allTransactions;
+
+    } catch (error) {
+      console.error("Error fetching all transactions:", error);
+      return [];
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (!isFetchingMore && currentPage < lastPage) {
+      fetchTransactions(false, currentPage + 1);
+    }
+  };
 
   const renderTransactionCard = ({ item }) => (
     <View style={{ justifyContent: "center", alignItems: "center" }}>
@@ -101,7 +166,7 @@ const Upitransactionreport = () => {
         <View style={{ flexDirection: "column" }}>
           <Text style={styles.cardText}>Name: {item.user.name} </Text>
           <Text style={styles.cardText}>Beneficiary: vas.{item.van.toLowerCase()}@idbi</Text>
-          <Text style={styles.cardText}>Amount: {item.tranAmt}</Text>
+          <Text style={styles.cardText}>Amount: {Number(item.tranAmt).toFixed(2)}</Text>
           <Text style={styles.cardText}>Transaction ID: {item.utr}</Text>
           <Text style={styles.carddate}>
             {new Date(item.updated_at).toLocaleString("en-US", {
@@ -119,7 +184,10 @@ const Upitransactionreport = () => {
   );
 
   const handleExport = async () => {
-    if (transactions.length === 0) {
+    const allTransactions = await fetchAllTransactions();
+    console.log(allTransactions, "aagytransactions");
+
+    if (allTransactions.length === 0) {
       alert("No data to export");
       return;
     }
@@ -144,13 +212,16 @@ const Upitransactionreport = () => {
     // 🔹 Add an empty row to separate user info and transactions
     const emptyRow = [[]];
 
+    console.log(allTransactions, 'transactions');
+
     // 🔹 Prepare transaction data
     const exportData = [
-      ["Name", "Beneficiary", "Amount", "Transaction ID", "Date"], // Headers
-      ...transactions.map((item) => [
+      ["Sno", "Name", "Beneficiary", "Amount", "Transaction ID", "Date"], // Headers
+      ...allTransactions.map((item, index) => [
+        index + 1,
         item.user.name || "-",
-        item.van ? `vas.${item.van.toLowerCase()}@idbi` : "-" ,
-        item.tranAmt || "-",
+        item.van ? `vas.${item.van.toLowerCase()}@idbi` : "-",
+        Number(item.tranAmt).toFixed(2) || "-",
         item.utr || "-",
         new Intl.DateTimeFormat("en-GB", {
           day: "2-digit",
@@ -170,12 +241,12 @@ const Upitransactionreport = () => {
     // 🔹 Create worksheet
     const ws = XLSX.utils.aoa_to_sheet(combinedData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Payout Report");
+    XLSX.utils.book_append_sheet(wb, ws, "UPI Report");
 
     // 🔹 Write file
     const wbout = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
 
-    const fileUri = FileSystem.documentDirectory + "Payout_Report.xlsx";
+    const fileUri = FileSystem.documentDirectory + "UPI_Report.xlsx";
 
     await FileSystem.writeAsStringAsync(fileUri, wbout, {
       encoding: FileSystem.EncodingType.Base64,
@@ -183,12 +254,13 @@ const Upitransactionreport = () => {
 
     await Sharing.shareAsync(fileUri, {
       mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      dialogTitle: "Export Payout Report",
+      dialogTitle: "Export UPI Report",
       UTI: "com.microsoft.excel.xlsx",
     });
   };
 
   const handlePDFExport = async () => {
+     const allTransactions = await fetchAllTransactions();
     if (transactions.length === 0) {
       alert("No data to export");
       return;
@@ -207,13 +279,14 @@ const Upitransactionreport = () => {
       .map(([key, value]) => `<tr><td>${key}</td><td>${value}</td></tr>`)
       .join("");
 
-    const transactionRows = transactions
-      .map((item) => {
+    const transactionRows = allTransactions
+      .map((item,index) => {
         return `
                         <tr>
+                           <td>${index + 1}</td>
                             <td>${item.user.name || "-"}</td>
                             <td>${item.van ? `${item.van.toLowerCase()}@idbi` : "-"}</td>
-                            <td>${item.tranAmt || "-"}</td>
+                            <td>${Number(item.tranAmt).toFixed(2) || "-"}</td>
                             <td>${item.utr || "-"}</td>
                             <td>${new Intl.DateTimeFormat("en-GB", {
           day: "2-digit",
@@ -262,6 +335,7 @@ const Upitransactionreport = () => {
                         <h2>Transaction Details</h2>
                         <table>
                             <tr>
+                                 <th>Sno</th>
                                 <th>Name</th>
                                 <th>Beneficiary</th>
                                 <th>Amount</th>
@@ -334,6 +408,13 @@ const Upitransactionreport = () => {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderTransactionCard}
           contentContainerStyle={styles.listContainer}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingMore ? (
+              <ActivityIndicator size="small" color="#007BB5" />
+            ) : null
+          }
         />
       </View>
       <Modal
