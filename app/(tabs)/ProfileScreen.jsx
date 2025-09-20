@@ -13,6 +13,7 @@ import * as ImagePicker from "expo-image-picker"; // Import image picker
 import { Ionicons } from "@expo/vector-icons";
 import Profile from "./assests/profile.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Api from "../common/api/apiconfig";
 
 const ProfileScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -26,7 +27,7 @@ const ProfileScreen = () => {
     const fetchUserData = async () => {
       try {
         const token = await AsyncStorage.getItem("token"); // Replace with your actual token
-        const response = await fetch("https://zevopay.online/api/v1/user", {
+        const response = await fetch(Api.USER_URL, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

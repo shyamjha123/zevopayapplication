@@ -9,25 +9,20 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
-
 import XLSX from "xlsx";
+import Api from "../common/api/apiconfig";
+import useGlobalstatePayoutreport from '../../hooks/GlobalstatePayoutreport';
 
 const Payoutreport = () => {
-    const [state, setState] = useState({
-        currentPicker: null,
-        isDatePickerVisible: false,
-        startDate: null,
-        endDate: null,
-    });
-    const [transactions, setTransactions] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [exportModalVisible, setExportModalVisible] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [lastPage, setLastPage] = useState(1);
-    const [isFetchingMore, setIsFetchingMore] = useState(false);
-
-    // console.log(state.startDate, state.endDate, "dates");
-
+    const {
+        state, setState,
+        transactions, setTransactions,
+        loading, setLoading,
+        exportModalVisible, setExportModalVisible,
+        currentPage, setCurrentPage,
+        lastPage, setLastPage,
+        isFetchingMore, setIsFetchingMore
+    } = useGlobalstatePayoutreport()
 
     useEffect(() => {
         fetchTransactions(); // Fetch transactions on component mount
@@ -55,7 +50,7 @@ const Payoutreport = () => {
 
         try {
             const token = await AsyncStorage.getItem("token");
-            let url = `https://zevopay.online/api/v1/user/payoutreport?page=${page}`;
+            let url = `${Api.PAYOUTREPORT_URL}?page=${page}`;
 
             if (state.startDate && state.endDate) {
                 const formattedStart = format(state.startDate, "yyyy-MM-dd");
@@ -67,7 +62,6 @@ const Payoutreport = () => {
                 console.log(url, 'urlbase');
 
             }
-
 
             const response = await fetch(url, {
                 method: "GET",
@@ -86,7 +80,6 @@ const Payoutreport = () => {
                 } else {
                     setTransactions(prev => [...prev, ...jsonResponse.data]);
                 }
-
                 setCurrentPage(jsonResponse.meta.currentPage);
                 setLastPage(jsonResponse.meta.lastPage);
             } else {
@@ -100,7 +93,6 @@ const Payoutreport = () => {
         }
     };
 
-
     const fetchAllTransactions = async () => {
         try {
             const token = await AsyncStorage.getItem("token");
@@ -109,7 +101,7 @@ const Payoutreport = () => {
             let lastPage = 1;
 
             do {
-                let url = `https://zevopay.online/api/v1/user/payoutreport?page=${page}`;
+                let url = `${Api.PAYOUTREPORT_URL}?page=${page}`;
 
                 if (state.startDate && state.endDate) {
                     const formattedStart = format(state.startDate, "yyyy-MM-dd");
@@ -145,7 +137,6 @@ const Payoutreport = () => {
         }
     };
 
-
     const handleLoadMore = () => {
         if (!isFetchingMore && currentPage < lastPage) {
             fetchTransactions(true, currentPage + 1);
@@ -153,9 +144,7 @@ const Payoutreport = () => {
     };
 
     const handleExport = async () => {
-
         const allTransactions = await fetchAllTransactions();
-
         if (allTransactions.length === 0) {
             alert("No data to export");
             return;
@@ -242,7 +231,7 @@ const Payoutreport = () => {
         }
 
         const keys = [
-             "userName", "userEmail", "userPhone", "virtual_account", "status",
+            "userName", "userEmail", "userPhone", "virtual_account", "status",
             "address", "aadharNumber", "panNumber", "state", "shopName",
             "shopAddress", "gstNumber", "businessPanNo", "landlineNumber",
             "landlineSTDCode", "country"
@@ -407,7 +396,6 @@ const Payoutreport = () => {
                 <Pressable onPress={fetchTransactions} style={styles.findButton}>
                     <Text style={styles.findButtonText}>FIND</Text>
                 </Pressable>
-
                 <Pressable onPress={() => setExportModalVisible(true)} style={styles.exportButton}>
                     <Text style={styles.findButtonText}>EXPORT</Text>
                 </Pressable>
@@ -547,6 +535,7 @@ const styles = StyleSheet.create({
 });
 
 export default Payoutreport;
+
 
 
 

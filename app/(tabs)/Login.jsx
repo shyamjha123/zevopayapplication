@@ -16,6 +16,7 @@ import Logo from "../(tabs)/assests/logo.png";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Api from "../common/api/apiconfig";
 
 // Define validation schema with Yup
 const validationSchema = Yup.object().shape({
@@ -32,10 +33,9 @@ const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleLogin = async (values) => {
-  
     const { email, password } = values;
     try {
-      const response = await fetch(`https://zevopay.online/api/v1/auth/login`, {
+      const response = await fetch(Api.LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -118,14 +118,14 @@ const Login = () => {
               {touched.password && errors.password && (
                 <Text style={styles.errorText}>{errors.password}</Text>
               )}
-              <Text style={{ color: "#0000FF" }} onPress={() => router.push("/Forgotmpin")}>Forgot Mpin</Text>
-              <Text style={{ color: "#0000FF" }} onPress={() => router.push("/Forgotpassword")}>Forgot Password</Text>
+              <Text style={styles.text} onPress={() => router.push("/Forgotmpin")}>Forgot Mpin</Text>
+              <Text style={styles.text} onPress={() => router.push("/Forgotpassword")}>Forgot Password</Text>
             </View>
 
             <TouchableOpacity style={styles.button} onPress={handleSubmit}>
               <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
-             <Text style={styles.versionText}>App Version 1.0.0</Text>
+            <Text style={styles.versionText}>App Version 1.0.0</Text>
           </View>
         )}
       </Formik>
@@ -211,13 +211,16 @@ const styles = StyleSheet.create({
     color: "red",
     fontSize: 12,
   },
-    versionText: {
+  versionText: {
     fontSize: 13,
     color: "gray",
     textAlign: "center",
     marginTop: 20,
     fontStyle: "italic",
   },
+  text: {
+    color: "#0000FF"
+  }
 });
 
 export default Login;

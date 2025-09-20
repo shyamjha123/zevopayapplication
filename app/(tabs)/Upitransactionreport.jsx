@@ -15,19 +15,22 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 import XLSX from "xlsx";
+import Api from "../common/api/apiconfig";
+import useGlobalstateUpireport from "../../hooks/GlobalstateUpireport";
 
 const Upitransactionreport = () => {
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [currentPicker, setCurrentPicker] = useState(null);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [exportModalVisible, setExportModalVisible] = useState(false);
-
+  const {
+    isDatePickerVisible, setDatePickerVisibility,
+    currentPicker, setCurrentPicker,
+    startDate, setStartDate,
+    endDate, setEndDate,
+    transactions, setTransactions,
+    currentPage, setCurrentPage,
+    lastPage, setLastPage,
+    isFetchingMore, setIsFetchingMore,
+    loading, setLoading,
+    exportModalVisible, setExportModalVisible
+  } = useGlobalstateUpireport()
 
   const showDatePicker = (pickerType) => {
     setCurrentPicker(pickerType);
@@ -53,55 +56,55 @@ const Upitransactionreport = () => {
   };
 
 
- const fetchTransactions = async (useDateRange = false, page = 1) => {
-        if (page === 1) setLoading(true);
-        else setIsFetchingMore(true);
+  const fetchTransactions = async (useDateRange = false, page = 1) => {
+    if (page === 1) setLoading(true);
+    else setIsFetchingMore(true);
 
-        try {
-            const token = await AsyncStorage.getItem("token");
-            let url = `https://zevopay.online/api/v1/user/upireport?page=${page}`;
+    try {
+      const token = await AsyncStorage.getItem("token");
+      let url = `${Api.UPITRANSACTIONREPORT_URL}?page=${page}`;
 
-            if (startDate && endDate) {
-                const formattedStart = format(startDate, "yyyy-MM-dd");
-                console.log(formattedStart, "start");
+      if (startDate && endDate) {
+        const formattedStart = format(startDate, "yyyy-MM-dd");
+        console.log(formattedStart, "start");
 
-                const formattedEnd = format(endDate, "yyyy-MM-dd");
-                console.log(formattedEnd, "start");
-                url += `&startDate=${formattedStart}&endDate=${formattedEnd}`;
-                console.log(url, 'urlbase');
+        const formattedEnd = format(endDate, "yyyy-MM-dd");
+        console.log(formattedEnd, "start");
+        url += `&startDate=${formattedStart}&endDate=${formattedEnd}`;
+        console.log(url, 'urlbase');
 
-            }
+      }
 
-            const response = await fetch(url, {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-            const jsonResponse = await response.json();
-            console.log(jsonResponse, "payoutreportresponse");
+      const jsonResponse = await response.json();
+      console.log(jsonResponse, "payoutreportresponse");
 
-            if (jsonResponse && Array.isArray(jsonResponse.data)) {
-                if (page === 1) {
-                    setTransactions(jsonResponse.data);
-                } else {
-                    setTransactions(prev => [...prev, ...jsonResponse.data]);
-                }
-
-                setCurrentPage(jsonResponse.meta.currentPage);
-                setLastPage(jsonResponse.meta.lastPage);
-            } else {
-                if (page === 1) setTransactions([]);
-            }
-        } catch (error) {
-            console.error("Error fetching transactions:", error);
-        } finally {
-            setLoading(false);
-            setIsFetchingMore(false);
+      if (jsonResponse && Array.isArray(jsonResponse.data)) {
+        if (page === 1) {
+          setTransactions(jsonResponse.data);
+        } else {
+          setTransactions(prev => [...prev, ...jsonResponse.data]);
         }
-    };
+
+        setCurrentPage(jsonResponse.meta.currentPage);
+        setLastPage(jsonResponse.meta.lastPage);
+      } else {
+        if (page === 1) setTransactions([]);
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    } finally {
+      setLoading(false);
+      setIsFetchingMore(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -118,7 +121,7 @@ const Upitransactionreport = () => {
       let lastPage = 1;
 
       do {
-        let url = `https://zevopay.online/api/v1/user/upireport?page=${page}`;
+        let url = `${Api.UPITRANSACTIONREPORT_URL}?page=${page}`;
 
         if (startDate && endDate) {
           const formattedStart = format(startDate, "yyyy-MM-dd");
@@ -260,7 +263,7 @@ const Upitransactionreport = () => {
   };
 
   const handlePDFExport = async () => {
-     const allTransactions = await fetchAllTransactions();
+    const allTransactions = await fetchAllTransactions();
     if (transactions.length === 0) {
       alert("No data to export");
       return;
@@ -280,7 +283,7 @@ const Upitransactionreport = () => {
       .join("");
 
     const transactionRows = allTransactions
-      .map((item,index) => {
+      .map((item, index) => {
         return `
                         <tr>
                            <td>${index + 1}</td>

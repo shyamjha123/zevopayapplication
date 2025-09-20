@@ -30,6 +30,7 @@ import Loan from "../(tabs)/assests/loan.png";
 import Satellite from "../(tabs)/assests/satellite.png";
 import Homescreencontainer from "../common/Homescreencontainer";
 import Homescreencards from "../common/Homescreencards";
+import Api from "../common/api/apiconfig";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -58,7 +59,7 @@ const Homescreen = () => {
       }
 
       const response = await fetch(
-        `https://zevopay.online/api/v1/wallet/balance`,
+       Api.BALANCE_URL,
         {
           method: "GET",
           headers: {

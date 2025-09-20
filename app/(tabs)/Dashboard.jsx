@@ -4,11 +4,8 @@ import {
   Text,
   StyleSheet,
   Image,
-  TouchableOpacity,
-  ActivityIndicator,
   Alert,
   BackHandler,
-  TouchableWithoutFeedback,
   Pressable,
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -22,15 +19,15 @@ import HomeScreen from "./Homescreen";
 import ProfileScreen from "./ProfileScreen";
 import Logo from "./assests/logo.png";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-// import Profile from "./assests/profile.png";
 import Mainwallet from "./Mainwallet";
 import Wallet from "../(tabs)/Wallet";
+import Funding from "../(tabs)/Funding";
 import Topup from "./Topup";
 import Help from "./Help";
 import { Link, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { useInactivityHandler } from "./InactivityHandler";
+import Api from "../common/api/apiconfig";
 
 const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -42,7 +39,6 @@ const CustomTabBarLabel = ({ label, onPress }) => (
 );
 
 const TabNavigator = () => {
-
   const router = useRouter();
   return (
 
@@ -103,67 +99,12 @@ const TabNavigator = () => {
       <Tab.Screen name="Topup" component={Topup} />
       <Tab.Screen name="Help" component={Help} />
     </Tab.Navigator>
-
-
   );
 };
 
 const CustomDrawerContent = (props) => {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // useEffect(() => {
-  //   const fetchProfileData = async () => {
-  //     try {
-  //       const token = await AsyncStorage.getItem("token"); // Retrieve the stored token
-  //       if (!token) {
-  //         Alert.alert("Error", "User not authenticated. Token is missing.");
-  //         return;
-  //       }
-
-  //       const response = await fetch(`https://zevopay.online/api/v1/user`, {
-  //         method: "GET",
-  //         headers: {
-  //           Authorization: `Bearer ${token}`, // Pass the token in Authorization header
-  //         },
-  //       });
-
-  //       const data = await response.json();
-
-  //       console.log(data.name, "dataresponse");
-
-  //       if (response.ok) {
-  //         setProfileData(data); // Set the fetched data in state
-
-  //         console.log(profileData.name, "nameofuser");
-  //       } else {
-  //         // Alert.alert('Error', data.message || 'Failed to fetch user profile.');
-  //       }
-  //     } catch (error) {
-  //       // Alert.alert('Error', 'An error occurred while fetching the user profile.');
-  //     } finally {
-  //       setLoading(false); // Stop loading
-  //     }
-  //   };
-
-  //   fetchProfileData();
-  // }, []);
-
-  // if (loading) {
-  //   return (
-  //     <View style={styles.loaderContainer}>
-  //       <ActivityIndicator size="large" color="blue" />
-  //     </View>
-  //   );
-  // }
-
-  // if (!profileData) {
-  //   return (
-  //     <View style={styles.container}>
-  //       <Text style={styles.errorText}>Failed to load profile data.</Text>
-  //     </View>
-  //   );
-  // }
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -174,7 +115,7 @@ const CustomDrawerContent = (props) => {
           return;
         }
 
-        const response = await fetch(`https://zevopay.online/api/v1/user`, {
+        const response = await fetch(Api.USER_URL, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`, // Pass the token in Authorization header
@@ -201,31 +142,22 @@ const CustomDrawerContent = (props) => {
     fetchProfileData();
   }, []);
 
-  console.log(profileData, "profileData");
-
   return (
     <DrawerContentScrollView {...props}>
       {profileData && (
         <View style={styles.customDrawerContainer}>
           <View
-            style={{
-              width: 110,
-              height: 110,
-              borderRadius: 70,
-              backgroundColor: "#fff",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
+            style={styles.customDrawerchildren}
           >
-            <Image source={Logo} style={{ width: 120, height: 40 }} />
+            <Image source={Logo} style={styles.Imagestyle} />
           </View>
           <Text style={{ color: "#87cefa", fontWeight: "bold", marginTop: 20 }}>
             {profileData.name}
           </Text>
           <Text style={styles.userdetailtext}>{profileData.userId}</Text>
-          <Text style={{ color: "#87cefa" }}>{profileData.phone}</Text>
-          <Text style={{ color: "#87cefa" }}>{profileData.email}</Text>
-          <Text style={{ color: "#87cefa" }}>zevopay.com @ 2024</Text>
+          <Text style={styles.colorstyle}>{profileData.phone}</Text>
+          <Text style={styles.colorstyle}>{profileData.email}</Text>
+          <Text style={styles.colorstyle}>zevopay.com @ 2024</Text>
         </View>
       )}
       <DrawerItemList {...props} />
@@ -235,7 +167,6 @@ const CustomDrawerContent = (props) => {
 
 const Dashboard = () => {
 
-  // console,log(useInactivityHandler)
   const [utiLabel, setUtiLabel] = useState("UTI Coupan Purchase");
   const router = useRouter();
 
@@ -256,7 +187,6 @@ const Dashboard = () => {
       };
 
       BackHandler.addEventListener("hardwareBackPress", handleBackPress);
-
       return () => {
         BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
       };
@@ -268,10 +198,7 @@ const Dashboard = () => {
     router.push("/Login");
   };
 
-  // console.log(profileData.name, "nameofuser")
   return (
-
-
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={({ route, navigation }) => ({
@@ -329,8 +256,23 @@ const Dashboard = () => {
             <Ionicons name={"wallet"} size={size} color={"gray"} />
           ),
           drawerLabel: () => (
-            <Pressable onPress={() => router.push("/(tabs)/Mainwallet")}>
+           
               <Text style={styles.drawerLabel}>Main Wallet</Text>
+          
+          ),
+        }}
+      />
+
+       <Drawer.Screen
+        name="Fund request"
+        component={Funding} // Set to null to use custom component
+        options={{
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={"wallet"} size={size} color={"gray"} />
+          ),
+          drawerLabel: () => (
+            <Pressable onPress={() => router.push("/(tabs)/Funding")}>
+              <Text style={styles.drawerLabel}>Fund Request</Text>
             </Pressable>
           ),
         }}
@@ -344,9 +286,7 @@ const Dashboard = () => {
             <Ionicons name={"wallet"} size={size} color={"gray"} />
           ),
           drawerLabel: () => (
-            <Pressable onPress={() => router.push("/(tabs)/Bbps")}>
               <Text style={styles.drawerLabel}>BBPS</Text>
-            </Pressable>
           ),
         }}
       />
@@ -359,9 +299,7 @@ const Dashboard = () => {
             <Ionicons name={"wallet"} size={size} color={"gray"} />
           ),
           drawerLabel: () => (
-            <Pressable onPress={() => router.push("/(tabs)/Wallet")}>
               <Text style={styles.drawerLabel}>AEPS Wallet</Text>
-            </Pressable>
           ),
         }}
       />
@@ -407,13 +345,10 @@ const Dashboard = () => {
             <Ionicons name={"help-circle-outline"} size={size} color={"gray"} />
           ),
           drawerLabel: () => (
-            <Pressable onPress={() => router.push("/(tabs)/HelpReport")}>
               <Text style={styles.drawerLabel}>Help Report</Text>
-            </Pressable>
           ),
         }}
       />
-
       <Drawer.Screen
         name="Reports"
         component={TabNavigator}
@@ -432,7 +367,6 @@ const Dashboard = () => {
           ),
         }}
       />
-
       <Drawer.Screen
         name="profile"
         component={TabNavigator}
@@ -497,7 +431,6 @@ const Dashboard = () => {
           ),
         }}
       />
-
       <Drawer.Screen
         name="Rate Us"
         component={TabNavigator}
@@ -510,7 +443,6 @@ const Dashboard = () => {
           ),
         }}
       />
-
       <Drawer.Screen
         name="Help"
         component={ProfileScreen}
@@ -525,7 +457,6 @@ const Dashboard = () => {
           ),
         }}
       />
-
       <Drawer.Screen
         name="logout"
         component={Logout}
@@ -541,7 +472,6 @@ const Dashboard = () => {
         }}
       />
     </Drawer.Navigator>
-
   );
 };
 
@@ -576,8 +506,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#4A90E2",
     padding: 20,
   },
+  Imagestyle: {
+    width: 120,
+    height: 40
+  },
+  customDrawerchildren: {
+    width: 110,
+    height: 110,
+    borderRadius: 70,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   customDrawerText: {
     color: "white",
     fontSize: 18,
   },
+  colorstyle: {
+    color: "#87cefa"
+  },
+  profilenametext: {
+    color: "#87cefa",
+    fontWeight: "bold",
+    marginTop: 20
+  }
 });

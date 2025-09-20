@@ -6,68 +6,57 @@ const Help = () => {
   return (
     <View style={styles.container}>
       <View style={styles.Issuecontainer}>
-        <Text style={{ color: "#4A90E2", fontSize: 22, fontWeight: "500" }}>
+        <Text style={styles.headingstyle}>
           Issue Related to these topics
         </Text>
       </View>
       <Text
-        style={{ color: "blue", fontSize: 15, marginTop: 10, paddingLeft: 15 }}
+        style={styles.customertex}
       >
         Customer Care
       </Text>
-      <View style={{ justifyContent: "center", alignItems: "center" }}>
+
+      <View style={styles.cardcontainerparent}>
         <View style={styles.cardcontainer}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
+          <View style={styles.cardcontainerIcon}>
             <Ionicons name={"call-outline"} size={24} color={"green"} />
-            <Text style={{ color: "#4A90E2", fontSize: 15 }}>8619981901</Text>
+            <Text style={styles.numbertext}>8619981901</Text>
           </View>
+
           <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 15,
-              marginTop: 20,
-            }}
+            style={styles.mailcontainertext}
           >
             <Ionicons name={"mail-outline"} size={24} color={"red"} />
-            <Text style={{ color: "#4A90E2", fontSize: 15 }}>
+            <Text style={styles.mailtext}>
               info@zevopay.com
             </Text>
           </View>
         </View>
       </View>
-      <View style={{ justifyContent: "center", alignItems: "center" }}>
+
+      <View style={styles.cardfootercontainerParent}>
         <View style={styles.cardfootercontainer}>
           <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 15,
-              // marginTop: 20,
-            }}
+            style={styles.cardfootercontainericon}
           >
             <View style={styles.iconContainer}>
               <Ionicons name="help-outline" size={30} color="white" />
             </View>
 
             <Text
-              style={{
-                color: "#4A90E2",
-                fontSize: 15,
-                fontWeight: "heavy",
-                marginBottom: 20,
-              }}
+              style={styles.helptext}
             >
               Help / Support
             </Text>
           </View>
           <Text
-            style={{ color: "gray", fontSize: 10, paddingLeft: 59, bottom: 20 }}
+            style={styles.reporttext}
           >
             report issues for help & Support
           </Text>
         </View>
       </View>
+
     </View>
   );
 };
@@ -96,10 +85,16 @@ const styles = StyleSheet.create({
     paddingLeft: 50,
     borderRadius: 10,
     backgroundColor: "rgba(211, 211, 211, 0.4)",
-    // backgroundColor: "rgba(211, 211, 211, 0.1)",
     shadowOffset: { width: 0, height: 2 },
-    // elevation: 5,
-    // shadowOpacity: 0.25,
+  },
+  cardfootercontainerParent: {
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  cardfootercontainericon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
   },
   cardfootercontainer: {
     flexDirection: "column",
@@ -119,6 +114,18 @@ const styles = StyleSheet.create({
     borderLeftColor: "#fff",
     borderRightColor: "#fff",
   },
+  helptext: {
+    color: "#4A90E2",
+    fontSize: 15,
+    fontWeight: "heavy",
+    marginBottom: 20,
+  },
+  reporttext: {
+    color: "gray",
+    fontSize: 10,
+    paddingLeft: 59,
+    bottom: 20
+  },
   iconContainer: {
     backgroundColor: "#4A90E2",
     padding: 10,
@@ -126,6 +133,47 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headingstyle: {
+    color: "#4A90E2",
+    fontSize: 22,
+    fontWeight: "500"
+  },
+  customertex: {
+    color: "blue",
+    fontSize: 15,
+    marginTop: 10,
+    paddingLeft: 15
+  },
+  cardcontainerparent: {
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  cardcontainerIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15
+  },
+  numbertext: {
+    color: "#4A90E2",
+    fontSize: 15
+  },
+  Mailcontainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
+    marginTop: 20,
+  },
+  mailtext: {
+    color: "#4A90E2",
+    fontSize: 15
+  },
+  mailcontainertext: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
+    marginTop: 20,
+  }
+
 });
 
 export default Help;

@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import * as Haptics from 'expo-haptics';
 import * as Animatable from 'react-native-animatable';
+import Api from "../common/api/apiconfig";
 
 
 // const QUICK_EMOJIS = ["😀", "😍", "👍", "😂", "😢", "🎉"];
@@ -63,7 +64,7 @@ const hideBalanceIds = ["k00000060", "te00000056"];
   const fetchUserApi = async () => {
     const storedToken = await AsyncStorage.getItem("token");
     try {
-      const response = await fetch(`https://zevopay.online/api/v1/user`, {
+      const response = await fetch(Api.USER_URL, {
         headers: {
           // method:"GET",
           Authorization: `Bearer ${storedToken}`,
@@ -87,8 +88,6 @@ const hideBalanceIds = ["k00000060", "te00000056"];
   }, [])
 
   const handleEmojiPress = async (emoji, itemId, modetype) => {
-    console.log(modetype, "modetypehggg");
-
     try {
       const token = await AsyncStorage.getItem("token");
       if (emoji === '👀') {
@@ -107,7 +106,7 @@ const hideBalanceIds = ["k00000060", "te00000056"];
       const isSameEmoji = selectedEmojis[itemId] === emoji;
       const finalEmoji = isSameEmoji ? null : emoji;
 
-      const response = await fetch('https://zevopay.online/api/v1/wallet/reaction', {
+      const response = await fetch(Api.REACTION_URL, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +151,7 @@ const hideBalanceIds = ["k00000060", "te00000056"];
       }
 
       const response = await fetch(
-        "https://zevopay.online/api/v1/wallet/transactions",
+        Api.TRANSACTION_URL,
         {
           method: "GET",
           headers: {
@@ -225,10 +224,11 @@ const hideBalanceIds = ["k00000060", "te00000056"];
         Alert.alert("Error", "User not authenticated. Token is missing.");
         return;
       }
+   
       // const token = await AsyncStorage.getItem("token");
       // const tokenstored = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoia2VlcmFuNzc3ODkwQGdtYWlsLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzQ1NDkxMTQ3LCJleHAiOjE3NDU0OTQ3NDd9.vMmRDxtKfLrbxuHCoV3EP4_gamJPEGWE_2CkgLXcOes';
       const response = await fetch(
-        `https://zevopay.online/api/v1/wallet/transactions?start_date=${startDate}&end_date=${endDate}`,
+        `${Api.TRANSACTION_URL}?start_date=${startDate}&end_date=${endDate}`,
         {
           method: "GET",
           headers: {

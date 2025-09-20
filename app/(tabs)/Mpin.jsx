@@ -11,6 +11,7 @@ import React, { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Api from "../common/api/apiconfig";
 
 const Mpin = () => {
   // state 
@@ -54,7 +55,7 @@ const Mpin = () => {
     setState((prevState) => ({ ...prevState, loading: true }));
 
     try {
-      const response = await fetch(`https://zevopay.online/api/v1/user/verify-mpin`, {
+      const response = await fetch(Api.MPIN_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

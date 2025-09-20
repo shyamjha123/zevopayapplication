@@ -17,19 +17,24 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 import XLSX from "xlsx";
+import Api from "../common/api/apiconfig";
+import useGlobalstateVirtaulreport from '../../hooks/GlobalstateVirtualreport';
 
 const Dmtreport = () => {
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [currentPicker, setCurrentPicker] = useState(null);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [userPhone, setUserPhone] = useState("");
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [exportModalVisible, setExportModalVisible] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const {
+     isDatePickerVisible, setDatePickerVisibility,
+     currentPicker, setCurrentPicker,
+     startDate, setStartDate,
+     endDate, setEndDate,
+     userPhone, setUserPhone,
+     transactions, setTransactions,
+     loading, setLoading,
+     exportModalVisible, setExportModalVisible,
+     currentPage, setCurrentPage,
+     lastPage, setLastPage,
+     isFetchingMore, setIsFetchingMore
+  } = useGlobalstateVirtaulreport();
+
 
   useEffect(() => {
     const fetchPhone = async () => {
@@ -71,7 +76,7 @@ const Dmtreport = () => {
 
     try {
       const token = await AsyncStorage.getItem("token");
-      let url = `https://zevopay.online/api/v1/user/virtualreport?page=${page}`;
+      let url = `${Api.VIRTUAL_REPORT}?page=${page}`;
 
       if (startDate && endDate) {
         const formattedStart = format(startDate, "yyyy-MM-dd");
@@ -127,7 +132,7 @@ const Dmtreport = () => {
       let lastPage = 1;
 
       do {
-        let url = `https://zevopay.online/api/v1/user/virtualreport?page=${page}`;
+        let url = `${Api.VIRTUAL_REPORT}?page=${page}`;
 
         if (startDate && endDate) {
           const formattedStart = format(startDate, "yyyy-MM-dd");
@@ -595,4 +600,3 @@ const styles = StyleSheet.create({
 });
 
 export default Dmtreport;
-

@@ -21,6 +21,7 @@ import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Formik } from "formik";
 import * as Yup from "yup";
+import Api from "../common/api/apiconfig";
 
 // Validation schema
 // Validation schema
@@ -51,13 +52,11 @@ const Zpayout = () => {
   const [userapi, setUserapi] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0); // State to trigger re-render
 
-
   // user Api 
-
   const fetchUserApi = async () => {
     const storedToken = await AsyncStorage.getItem("token");
     try {
-      const response = await fetch(`https://zevopay.online/api/v1/user`, {
+      const response = await fetch(Api.USER_URL, {
         headers: {
           // method:"GET",
           Authorization: `Bearer ${storedToken}`,
@@ -155,7 +154,7 @@ const Zpayout = () => {
       const email = await AsyncStorage.getItem("userEmail");
       const phone = await AsyncStorage.getItem("userPhone");
       const Name = await AsyncStorage.getItem("userName");
-      const response = await fetch("https://zevopay.online/api/v1/webhook/payout", {
+      const response = await fetch(Api.PAYOUT_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -246,7 +245,7 @@ const Zpayout = () => {
       );
 
       const mpinResponse = await Promise.race([
-        fetch("https://zevopay.online/api/v1/user/verify-mpin", {
+        fetch(Api.MPIN_URL, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -371,19 +370,11 @@ const Zpayout = () => {
             }}
             validationSchema={validationSchema}
             onSubmit={async (values, { resetForm }) => {
-              // if (userapi?.status === "IN_ACTIVE") {
-              //   await AsyncStorage.removeItem("token");
-              //   navigation.reset({
-              //     index: 0,
-              //     routes: [{ name: "Login" }],
-              //   });
-              //   return;
-              // }
-
+ 
               try {
                 const token = await AsyncStorage.getItem("token");
 
-                const res = await fetch("https://zevopay.online/api/v1/user", {
+                const res = await fetch(Api.USER_URL, {
                   headers: {
                     Authorization: `Bearer ${token}`,
                   },

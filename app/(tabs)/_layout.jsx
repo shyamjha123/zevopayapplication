@@ -48,6 +48,36 @@ export default function TabLayout() {
       />
 
       <Stack.Screen
+        name="Funding"
+        options={{
+          headerShown: true, // Show header for this screen
+          headerStyle: {
+            backgroundColor: "#4A90E2", // Set the background color to blue
+          },
+          headerTintColor: "#fff", // Optional: Set text color to white for better contrast
+        }}
+      />
+      <Stack.Screen
+        name="AddFundrequest"
+        options={{
+          headerShown: true, // Show header for this screen
+          headerStyle: {
+            backgroundColor: "#4A90E2", // Set the background color to blue
+          },
+          headerTintColor: "#fff", // Optional: Set text color to white for better contrast
+        }}
+      />
+      <Stack.Screen
+        name="ListFundrequest"
+        options={{
+          headerShown: true, // Show header for this screen
+          headerStyle: {
+            backgroundColor: "#4A90E2", // Set the background color to blue
+          },
+          headerTintColor: "#fff", // Optional: Set text color to white for better contrast
+        }}
+      />
+      <Stack.Screen
         name="Fundmanagement"
         options={{
           headerShown: true, // Show header for this screen
