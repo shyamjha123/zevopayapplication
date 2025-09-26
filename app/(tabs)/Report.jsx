@@ -8,6 +8,14 @@ const Report = () => {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <CommonCards
+          onPress={() => router.push("/NewvirtualReport") }
+          iconname={"wallet-outline"}
+          color={"#007BB5"}
+          text={"New Virtual Report"}
+          footertext={"Track your virtual report"}
+        />
+
+        <CommonCards
           onPress={() => router.push("/Dmtreport")}
         />
         
